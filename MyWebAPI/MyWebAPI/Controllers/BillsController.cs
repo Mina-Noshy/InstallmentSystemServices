@@ -1,9 +1,12 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MyWebAPI.Services;
 using MyWebModels.Models;
+using MyWebModels.Models.Account;
+using MyWebModels.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,28 +16,30 @@ namespace MyWebAPI.Controllers
 {
     [Route("api/[controller]/[action]")]
     [ApiController]
-    [Authorize]
+    [Authorize(Roles = "Admin,Moderator,User")]
     public class BillsController : ControllerBase
     {
         private readonly IBillServices services;
+        private readonly UserManager<AppUser> userManager;
 
-        public BillsController(IBillServices services)
+        public BillsController(IBillServices services, UserManager<AppUser> userManager)
         {
             this.services = services;
+            this.userManager = userManager;
         }
 
         // GET: api/Bills
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<Bill>>> GetBills()
+        [HttpGet("{userId}")]
+        public async Task<ActionResult<IEnumerable<BillMobileVM>>> GetUserBillsVM(string userId)
         {
-            return await services.GetAll();
+            return await services.GetAllVM(userId);
         }
 
         // GET: api/Bills/3
-        [HttpGet("{id}")]
-        public async Task<ActionResult<IEnumerable<Bill>>> GetClientBills(int clientId)
+        [HttpGet("{clientId}")]
+        public async Task<ActionResult<IEnumerable<BillMobileVM>>> GetClientBillsVM(int clientId)
         {
-            return await services.GetAll(clientId);
+            return await services.GetAllVM(clientId);
         }
 
         // GET: api/Bills/5
@@ -42,6 +47,20 @@ namespace MyWebAPI.Controllers
         public async Task<ActionResult<Bill>> GetBill(int id)
         {
             var bill = services.Find(id);
+
+            if (bill == null)
+            {
+                return await Task.FromResult(NotFound());
+            }
+
+            return bill;
+        }
+
+        // GET: api/Bills/5
+        [HttpGet("{id}")]
+        public async Task<ActionResult<BillVM>> GetBillVM(int id)
+        {
+            var bill = services.FindVM(id);
 
             if (bill == null)
             {
@@ -78,7 +97,7 @@ namespace MyWebAPI.Controllers
                 }
             }
 
-            return NoContent();
+            return Ok();
         }
 
         // POST: api/Bills
@@ -88,7 +107,7 @@ namespace MyWebAPI.Controllers
         {
             await services.Add(bill);
 
-            return CreatedAtAction("GetBill", new { id = bill.Id }, bill);
+            return Ok();
         }
 
         // DELETE: api/Bills/5
@@ -103,7 +122,7 @@ namespace MyWebAPI.Controllers
 
             await services.Delete(id);
 
-            return NoContent();
+            return Ok();
         }
     }
 }

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MyWebAPI.Services;
 using MyWebModels.Models;
+using MyWebModels.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,7 +14,7 @@ namespace MyWebAPI.Controllers
 {
     [Route("api/[controller]/[action]")]
     [ApiController]
-    [Authorize]
+    [Authorize(Roles = "Admin,Moderator,User")]
     public class InstallmentsController : ControllerBase
     {
         private readonly IInstallmentServices services;
@@ -23,53 +24,40 @@ namespace MyWebAPI.Controllers
             this.services = services;
         }
 
+
         // GET: api/Installments
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<Installment>>> GetAll()
+        [HttpGet("{userId}")]
+        public async Task<ActionResult<IEnumerable<InstallmentMobileVM>>> GetAllUnreceivedVM(string userId)
         {
-            return await services.GetAll();
+            return await services.GetAllUnreceivedVM(userId);
         }
 
         // GET: api/Installments
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<Installment>>> GetAllReceived()
+        [HttpGet("{userId}")]
+        public async Task<ActionResult<IEnumerable<InstallmentMobileVM>>> GetAllTodayVM(string userId)
         {
-            return await services.GetAllReceived();
+            return await services.GetAllTodayVM(userId);
         }
 
         // GET: api/Installments
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<Installment>>> GetAllUnreceived()
+        [HttpGet("{userId}")]
+        public async Task<ActionResult<IEnumerable<InstallmentMobileVM>>> GetReceivedTodayVM(string userId)
         {
-            return await services.GetAllUnreceived();
+            return await services.GetReceivedTodayVM(userId);
         }
 
         // GET: api/Installments
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<Installment>>> GetAllToday()
+        [HttpGet("{userId}")]
+        public async Task<ActionResult<IEnumerable<InstallmentMobileVM>>> GetUnreceivedTodayVM(string userId)
         {
-            return await services.GetAllToday();
+            return await services.GetUnreceivedTodayVM(userId);
         }
 
         // GET: api/Installments
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<Installment>>> GetReceivedToday()
+        [HttpGet("{userId}/{dateTime}")]
+        public async Task<ActionResult<IEnumerable<InstallmentMobileVM>>> GetByDayVM(string userId, string dateTime)
         {
-            return await services.GetReceivedToday();
-        }
-
-        // GET: api/Installments
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<Installment>>> GetUnreceivedToday()
-        {
-            return await services.GetUnreceivedToday();
-        }
-
-        // GET: api/Installments
-        [HttpGet("{dateTime}")]
-        public async Task<ActionResult<IEnumerable<Installment>>> GetByDay(string dateTime)
-        {
-            return await services.GetByDay(Convert.ToDateTime(dateTime));
+            return await services.GetByDayVM(userId, Convert.ToDateTime(dateTime));
         }
 
         // GET: api/Installments/5
@@ -85,6 +73,21 @@ namespace MyWebAPI.Controllers
 
             return installment;
         }
+
+        // GET: api/Installments/5
+        [HttpGet("{id}")]
+        public async Task<ActionResult<InstallmentVM>> GetInstallmentVM(int id)
+        {
+            var installment = await services.FindVM(id);
+
+            if (installment == null)
+            {
+                return await Task.FromResult(NotFound());
+            }
+
+            return installment;
+        }
+
 
         // PUT: api/installment/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
@@ -106,7 +109,7 @@ namespace MyWebAPI.Controllers
                 throw;
             }
 
-            return NoContent();
+            return Ok();
         }
     }
 }

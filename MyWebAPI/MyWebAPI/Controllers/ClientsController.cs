@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MyWebAPI.Services;
 using MyWebModels.Models;
+using MyWebModels.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,7 +14,7 @@ namespace MyWebAPI.Controllers
 {
     [Route("api/[controller]/[action]")]
     [ApiController]
-    [Authorize]
+    [Authorize(Roles = "Admin,Moderator,User")]
     public class ClientsController : ControllerBase
     {
         private readonly IClientServices services;
@@ -24,10 +25,16 @@ namespace MyWebAPI.Controllers
         }
 
         // GET: api/Clients
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<Client>>> GetClients()
+        [HttpGet("{userId}")]
+        public async Task<ActionResult<IEnumerable<ClientMobileVM>>> GetClientsVM(string userId)
         {
-            return await services.GetAll();
+            return await services.GetAllVM(userId);
+        }
+
+        [HttpGet("{userId}/{txt}")]
+        public async Task<ActionResult<IEnumerable<ClientMobileVM>>> SearchVM(string userId, string txt)
+        {
+            return await services.GetAllVM(userId, txt);
         }
 
         // GET: api/Clients/5
@@ -35,6 +42,20 @@ namespace MyWebAPI.Controllers
         public async Task<ActionResult<Client>> GetClient(int id)
         {
             var client = services.Find(id);
+
+            if (client == null)
+            {
+                return await Task.FromResult(NotFound());
+            }
+
+            return client;
+        }
+
+        // GET: api/Clients/5
+        [HttpGet("{id}")]
+        public async Task<ActionResult<ClientVM>> GetClientVM(int id)
+        {
+            var client = services.FindVM(id);
 
             if (client == null)
             {
@@ -71,7 +92,7 @@ namespace MyWebAPI.Controllers
                 }
             }
 
-            return NoContent();
+            return Ok();
         }
 
         // POST: api/Clients
@@ -81,7 +102,7 @@ namespace MyWebAPI.Controllers
         {
             await services.Add(client);
 
-            return CreatedAtAction("GetClient", new { id = client.Id }, client);
+            return Ok();
         }
 
         // DELETE: api/Clients/5
@@ -96,7 +117,7 @@ namespace MyWebAPI.Controllers
 
             await services.Delete(id);
 
-            return NoContent();
+            return Ok();
         }
     }
 }
