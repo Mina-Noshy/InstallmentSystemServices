@@ -16,7 +16,8 @@ namespace MyWebAPI.Controllers
 {
     [Route("api/[controller]/[action]")]
     [ApiController]
-    [Authorize(Roles = "Admin,Moderator,User")]
+    //[Authorize(Roles = "Admin,Moderator,User")]
+    [Authorize]
     public class BillsController : ControllerBase
     {
         private readonly IBillServices services;

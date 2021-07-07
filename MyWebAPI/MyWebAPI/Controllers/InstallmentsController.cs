@@ -14,7 +14,8 @@ namespace MyWebAPI.Controllers
 {
     [Route("api/[controller]/[action]")]
     [ApiController]
-    [Authorize(Roles = "Admin,Moderator,User")]
+    //[Authorize(Roles = "Admin,Moderator,User")]
+    [Authorize]
     public class InstallmentsController : ControllerBase
     {
         private readonly IInstallmentServices services;

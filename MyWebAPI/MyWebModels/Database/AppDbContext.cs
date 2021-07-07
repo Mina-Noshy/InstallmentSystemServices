@@ -12,7 +12,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace MyWebModels.Database
 {
-    public class AppDbContext : IdentityDbContext<AppUser, IdentityRole, string>
+    public class AppDbContext : IdentityDbContext<AppUser>
     {
         protected override void OnModelCreating(ModelBuilder builder)
         {

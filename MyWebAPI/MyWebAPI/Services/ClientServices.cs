@@ -59,6 +59,7 @@ namespace MyWebAPI.Services
                 .Select(x => new ClientMobileVM
                 {
                     id = x.Id,
+                    name = x.Name,
                     address = x.AddressDetails,
                     phone = x.Phone_1
                 }).ToListAsync();
@@ -67,11 +68,12 @@ namespace MyWebAPI.Services
         public async Task<ActionResult<IEnumerable<ClientMobileVM>>> GetAllVM(string userId, string txt)
         {
             return await context.Clients
-                .Where(x => x.UserId == userId && x.Name.Contains(txt))
+                .Where(x => x.UserId == userId && x.Name.ToLower().Contains(txt.ToLower()))
                 .OrderBy(x => x.Name)
                 .Select(x => new ClientMobileVM
                 {
                     id = x.Id,
+                    name = x.Name,
                     address = x.AddressDetails,
                     phone = x.Phone_1
                 }).ToListAsync();
