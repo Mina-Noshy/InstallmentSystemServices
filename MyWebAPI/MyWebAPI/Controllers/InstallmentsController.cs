@@ -25,6 +25,12 @@ namespace MyWebAPI.Controllers
             this.services = services;
         }
 
+        // GET: api/Installments
+        [HttpGet("{billId}")]
+        public async Task<ActionResult<IEnumerable<InstallmentMobileVM>>> GetBillInstallmentsVM(int billId)
+        {
+            return await services.GetBillInstallmentsVM(billId);
+        }
 
         // GET: api/Installments
         [HttpGet("{userId}")]
@@ -110,6 +116,13 @@ namespace MyWebAPI.Controllers
                 throw;
             }
 
+            return Ok();
+        }
+
+        [HttpPost("{id}")]
+        public async Task<IActionResult> SwitchInstallmentState(int id)
+        {
+            await services.SwitchInstallmentState(id);
             return Ok();
         }
     }

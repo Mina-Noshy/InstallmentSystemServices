@@ -19,7 +19,7 @@ namespace MyWebModels.Models
 
         [Range(1, 100)]
         [Required]
-        public int Percentage { get; set; }
+        public double Percentage { get; set; }
 
         [Required]
         public double TotalAmount { get; set; }
@@ -27,12 +27,11 @@ namespace MyWebModels.Models
         [Required]
         public double AmountPaid { get; set; }
 
-        [Required]
         public double RestAmount { get; set; }
 
         [Range(1, 100)]
         [Required]
-        public int InstallmentCount { get; set; } // عدد الاقساط
+        public short InstallmentCount { get; set; } // عدد الاقساط
 
         [Required]
         public double DelayFine { get; set; } = 0; // غرامه تاخير

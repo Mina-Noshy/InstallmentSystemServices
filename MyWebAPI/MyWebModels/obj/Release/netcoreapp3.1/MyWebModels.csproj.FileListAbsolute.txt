@@ -17,7 +17,6 @@ D:\projects\web\GreenTraderServices\MyWebAPI\MyWebModels\obj\Release\netcoreapp3
 D:\projects\web\InstallmentSystemServices\MyWebAPI\MyWebModels\bin\Release\netcoreapp3.1\MyWebModels.deps.json
 D:\projects\web\InstallmentSystemServices\MyWebAPI\MyWebModels\bin\Release\netcoreapp3.1\MyWebModels.dll
 D:\projects\web\InstallmentSystemServices\MyWebAPI\MyWebModels\bin\Release\netcoreapp3.1\MyWebModels.pdb
-D:\projects\web\InstallmentSystemServices\MyWebAPI\MyWebModels\obj\Release\netcoreapp3.1\MyWebModels.csproj.AssemblyReference.cache
 D:\projects\web\InstallmentSystemServices\MyWebAPI\MyWebModels\obj\Release\netcoreapp3.1\MyWebModels.AssemblyInfoInputs.cache
 D:\projects\web\InstallmentSystemServices\MyWebAPI\MyWebModels\obj\Release\netcoreapp3.1\MyWebModels.AssemblyInfo.cs
 D:\projects\web\InstallmentSystemServices\MyWebAPI\MyWebModels\obj\Release\netcoreapp3.1\MyWebModels.csproj.CoreCompileInputs.cache

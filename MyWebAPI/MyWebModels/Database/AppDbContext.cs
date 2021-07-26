@@ -17,10 +17,10 @@ namespace MyWebModels.Database
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
-
-            RoleSeed.Seed(builder);
-            UserSeed.Seed(builder);
-            UserRoleSeed.Seed(builder);
+            
+            //UserSeed.Seed(builder);
+            //RoleSeed.Seed(builder);
+            //UserRoleSeed.Seed(builder);
         }
 
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)

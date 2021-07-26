@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Primitives;
 using MyWebAPI.Services.Account;
 using MyWebAPI.Services.Helper;
+using MyWebModels.Models.Account;
 using MyWebModels.ViewModels;
 using System;
 using System.Collections.Generic;
@@ -14,6 +15,7 @@ namespace MyWebAPI.Controllers
 {
     [Route("api/[controller]/[action]")]
     [ApiController]
+    [AllowAnonymous]
     public class AccountController : ControllerBase
     {
         private readonly IUserService _userService;
@@ -22,112 +24,104 @@ namespace MyWebAPI.Controllers
             _userService = userService;
         }
 
-        [AllowAnonymous]
-        [HttpPost("register")]
+        [HttpPost]
         public async Task<ActionResult> RegisterAsync(RegisterVM model)
         {
-            string message = await _userService.RegisterAsync(model);
+            var message = await _userService.RegisterAsync(model);
 
-            ResponseVM response = new ResponseVM
-            {
-                Status = EastariaHelper.GetResponceStatus(message),
-                Message = message
-            };
-            return Ok(response);
+            if (message.State)
+                return Ok(message);
+            else
+                return BadRequest(message);
         }
 
-        [Authorize(Roles = "Admin,Moderator")]
-        [HttpPost("register-user")]
-        public async Task<ActionResult> RegisterAsUserAsync(RegisterVM model)
+        [HttpPost]
+        public async Task<ActionResult> RegisterAsAdminAsync(RegisterVM model)
         {
-            string message = await _userService.RegisterWithRoleAsync(model, RoleVM.User);
-
-            ResponseVM response = new ResponseVM
+            if(!await _userService.AnyUser())
             {
-                Status = EastariaHelper.GetResponceStatus(message),
-                Message = message
-            };
+                string _email = "mina-noshy@outlook.com";
+                string _password = "666666";
+                // here add user.
+                var result = await _userService.CreateUserAsync(new AppUser
+                {
+                    FirstName = "Mina",
+                    LastName = "Noshy",
+                    UserName = _email,
+                    Email = _email,
+                    PhoneNumber = "01111257052",
+                    EmailConfirmed = true,
+                    PhoneNumberConfirmed = true,
+                }, _password);
 
-            return Ok(response);
+                if(!result)
+                    return BadRequest(new ResponseVM { State = false, Title = "Oh baby", Message = "Well done baby, try playing again." });
+
+                if (!await _userService.AnyRole())
+                {
+                    // here add all roles.
+                    if(await _userService.CreateRoleAsync(RoleVM.Admin) 
+                    && await _userService.CreateRoleAsync(RoleVM.Moderator)
+                    && await _userService.CreateRoleAsync(RoleVM.User))
+                    {
+                        // here add user to role.
+                        AppUser user = await _userService.GetByEmail(_email);
+                        var roleMessage = await _userService.AddUserToRoleAsync(_email, RoleVM.Admin);
+                        
+                        if (roleMessage.State)
+                            return Ok(roleMessage);
+                        else
+                            return BadRequest(roleMessage);
+                    }
+
+                }
+                else
+                    return BadRequest(new ResponseVM { State = false, Title = "Oh baby", Message = "Well done baby, try playing again." });
+            }
+
+            return BadRequest(new ResponseVM { State = false, Title = "Oh baby", Message = "Well done baby, try playing again." });
+
         }
 
-        [Authorize(Roles = "Admin,Moderator")]
-        [HttpPost("register-moderator")]
-        public async Task<ActionResult> RegisterAsModeratorAsync(RegisterVM model)
+        [Authorize]
+        [HttpPost]
+        public async Task<ActionResult> UpdateUserInfoAsync(RegisterVM model)
         {
-            string message = await _userService.RegisterWithRoleAsync(model, RoleVM.Moderator);
+            var message = await _userService.UpdateUserInfoAsync(model);
 
-            ResponseVM response = new ResponseVM
-            {
-                Status = EastariaHelper.GetResponceStatus(message),
-                Message = message
-            };
-
-            return Ok(response);
+            if (message.State)
+                return Ok(message);
+            else
+                return BadRequest(message);
         }
 
         [Authorize(Roles = "Admin")]
-        [HttpPost("register-admin")]
-        public async Task<ActionResult> RegisterAsAdminAsync(RegisterVM model)
+        [HttpPost("{userName}/{role}")]
+        public async Task<ActionResult> UpdateUserRoleAsync(string userName, string role)
         {
-            string message = await _userService.RegisterWithRoleAsync(model, RoleVM.Admin);
+            AppUser user = await _userService.GetByName(userName);
+            var message = await _userService.UpdateUserRoleAsync(user, role);
 
-            ResponseVM response = new ResponseVM
-            {
-                Status = EastariaHelper.GetResponceStatus(message),
-                Message = message
-            };
-
-            return Ok(response);
+            if (message.State)
+                return Ok(message);
+            else
+                return BadRequest(message);
         }
 
-        [Authorize(Roles = "Admin, Moderator")]
-        [HttpPost("update-user")]
-        public async Task<ActionResult> UpdateUserInfoAsync(RegisterVM model)
+        [Authorize(Roles = "Admin")]
+        [HttpPost("{userName}/{role}")]
+        public async Task<ActionResult> RemoveUserFromRoleAsync(string userName, string role)
         {
-            string message = await _userService.UpdateUserInfoAsync(model);
+            var message = await _userService.RemoveUserFromRoleAsync(userName, role);
 
-            ResponseVM response = new ResponseVM
-            {
-                Status = EastariaHelper.GetResponceStatus(message),
-                Message = message
-            };
-
-            return Ok(response);
-        }
-
-        [Authorize(Roles = "Admin, Moderator")]
-        [HttpPost("update-user-role")]
-        public async Task<ActionResult> UpdateUserRoleAsync(string email, string role)
-        {
-            string message = await _userService.UpdateUserRoleAsync(email, role);
-
-            ResponseVM response = new ResponseVM
-            {
-                Status = EastariaHelper.GetResponceStatus(message),
-                Message = message
-            };
-
-            return Ok(response);
-        }
-
-        [Authorize(Roles = "Admin, Moderator")]
-        [HttpPost("remove-user-role")]
-        public async Task<ActionResult> RemoveUserFromRoleAsync(string email, string role)
-        {
-            string message = await _userService.RemoveUserRoleAsync(email, role);
-
-            ResponseVM response = new ResponseVM
-            {
-                Status = EastariaHelper.GetResponceStatus(message),
-                Message = message
-            };
-
-            return Ok(response);
+            if (message.State)
+                return Ok(message);
+            else
+                return BadRequest(message);
         }
 
 
-        [HttpPost("token")]
+        [HttpPost]
         public async Task<IActionResult> GetTokenAsync(TokenRequestVM model)
         {
             var result = await _userService.GetTokenAsync(model);
@@ -142,21 +136,19 @@ namespace MyWebAPI.Controllers
 
         }
 
-        [HttpPost("add-role")]
-        public async Task<IActionResult> AddRoleAsync(AddUserRoleVM model)
+        [Authorize(Roles = "Admin")]
+        [HttpPost("{userName}/{role}")]
+        public async Task<IActionResult> AddUserToRoleAsync(string userName, string role)
         {
-            string message = await _userService.AddRoleAsync(model);
+            var message = await _userService.AddUserToRoleAsync(userName, role);
 
-            ResponseVM response = new ResponseVM
-            {
-                Status = EastariaHelper.GetResponceStatus(message),
-                Message = message
-            };
-
-            return Ok(response);
+            if (message.State)
+                return Ok(message);
+            else
+                return BadRequest(message);
         }
 
-        [HttpPost("refresh-token")]
+        [HttpPost]
         public async Task<IActionResult> RefreshToken()
         {
             var refreshToken = Request.Cookies["refreshToken"];
@@ -169,43 +161,32 @@ namespace MyWebAPI.Controllers
         }
 
 
-        [HttpPost("revoke-token")]
-        public async Task<IActionResult> RevokeToken([FromBody] RevokeTokenRequestVM model)
+        [HttpPost("{token}")]
+        public async Task<IActionResult> RevokeToken(string token)
         {
             // accept token from request body or cookie
-            var token = model.Token ?? Request.Cookies["refreshToken"];
+            var _userToken = token ?? Request.Cookies["refreshToken"];
 
-            if (string.IsNullOrEmpty(token))
-                return BadRequest(new ResponseVM {Status = "Error", Message = "Token is required" });
+            if (string.IsNullOrEmpty(_userToken))
+                return BadRequest(new ResponseVM { State = false, Title = "Error", Message = "Token is required" });
 
-            var response = await _userService.RevokeToken(token);
+            var response = await _userService.RevokeToken(_userToken);
 
             if (!response)
-                return NotFound(new ResponseVM{Status = "Error", Message = "Token not found" });
+                return NotFound(new ResponseVM { State = false, Title = "Error", Message = "Token not found" });
 
-            return Ok(new ResponseVM{Status = "Success", Message = "Token revoked" });
-        }
-
-        private void SetRefreshTokenInCookie(string refreshToken)
-        {
-            var cookieOptions = new CookieOptions
-            {
-                HttpOnly = true,
-                Expires = DateTime.UtcNow.AddDays(10),
-            };
-            Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
+            return Ok(new ResponseVM { State = true, Title = "Success", Message = "Token revoked" });
         }
 
         [Authorize]
-        [HttpPost("tokens/{id}")]
-        public async Task<IActionResult> GetRefreshTokens(string id)
+        [HttpGet("{userName}")]
+        public async Task<IActionResult> GetRefreshTokens(string userName)
         {
-            var user = await _userService.GetById(id);
+            var user = await _userService.GetByName(userName);
             return Ok(user.RefreshTokens);
         }
 
-        [AllowAnonymous]
-        [HttpPost("is-available/{email}")]
+        [HttpPost("{email}")]
         public async Task<ActionResult> IsEmailAvailable(string email)
         {
             if (await _userService.IsEmailAvailable(email))
@@ -214,5 +195,26 @@ namespace MyWebAPI.Controllers
             return NotFound();
         }
 
+        [Authorize(Roles = "Admin")]
+        [HttpPost("{userId}/{days}")]
+        public async Task<ActionResult> RenewSubscription(string userId, int days)
+        {
+            if (await _userService.RenewSubscription(userId, days))
+                return Ok();
+
+            return NotFound();
+        }
+
+
+        private void SetRefreshTokenInCookie(string refreshToken)
+        {
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Expires = DateTime.UtcNow.AddDays(30),
+            };
+            Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
+        }
+    
     }
 }

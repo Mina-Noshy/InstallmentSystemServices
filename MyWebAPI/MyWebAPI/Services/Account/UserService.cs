@@ -19,17 +19,27 @@ namespace MyWebAPI.Services.Account
 {
     public interface IUserService
     {
-        Task<string> RegisterAsync(RegisterVM model);
-        Task<string> RegisterWithRoleAsync(RegisterVM model, string role);
-        Task<string> UpdateUserInfoAsync(RegisterVM model);
-        Task<string> UpdateUserRoleAsync(string email, string role);
-        Task<string> RemoveUserRoleAsync(string email, string role);
+        Task<bool> CreateUserAsync(AppUser user, string password);
+        Task<bool> CreateRoleAsync(string role);
+
+        Task<ResponseVM> RegisterAsync(RegisterVM model);
+        Task<ResponseVM> UpdateUserInfoAsync(RegisterVM model);
+        Task<ResponseVM> UpdateUserRoleAsync(AppUser user, string role);
+        Task<ResponseVM> RemoveUserFromRoleAsync(string email, string role);
         Task<AuthenticationVM> GetTokenAsync(TokenRequestVM model);
-        Task<string> AddRoleAsync(AddUserRoleVM model);
+        Task<ResponseVM> AddUserToRoleAsync(string email, string role);
         Task<AuthenticationVM> RefreshTokenAsync(string jwtToken);
         Task<bool> RevokeToken(string token);
-        Task<AppUser> GetById(string id);
         Task<bool> IsEmailAvailable(string email);
+        Task<bool> IsUserNameAvailable(string userName);
+        Task<AppUser> GetById(string id);
+        Task<AppUser> GetByName(string userName);
+        Task<AppUser> GetByEmail(string email);
+        Task<bool> AnyUser();
+        Task<bool> AnyRole();
+        Task<bool> AnyUserRole();
+
+        Task<bool> RenewSubscription(string userId, int days);
     }
     public class UserService : IUserService
     {
@@ -48,7 +58,30 @@ namespace MyWebAPI.Services.Account
             _jwt = jwt.Value;
         }
 
-        public async Task<string> RegisterAsync(RegisterVM model)
+        public async Task<bool> CreateUserAsync(AppUser user, string password)
+        {
+            var result = await _userManager.CreateAsync(user, password);
+            if (result.Succeeded)
+                return true;
+
+            return false;
+        }
+        public async Task<bool> CreateRoleAsync(string role)
+        {
+            if (!await _roleManager.RoleExistsAsync(role))
+            {
+                var result = await _roleManager.CreateAsync(new IdentityRole(role));
+                if (result.Succeeded)
+                    return true;
+
+                return false;
+            }
+
+            return false;
+        }
+
+
+        public async Task<ResponseVM> RegisterAsync(RegisterVM model)
         {
             var user = new AppUser
             {
@@ -70,58 +103,18 @@ namespace MyWebAPI.Services.Account
                 var result = await _userManager.CreateAsync(user, model.Password);
                 if (result.Succeeded)
                 {
-                    return $"Success, User Registered with username {user.UserName}";
+                    return new ResponseVM { State = true, Title = "Success", Message = $"Success, User Registered with username {user.UserName}" };
                 }
                 else
-                    return $"Error, Some error when register email {user.Email }.";
+                    return new ResponseVM { State = false, Title = "Error", Message = $"Error, Some error when register email {user.Email }." };
             }
             else
             {
-                return $"Error, Email {user.Email } is already registered.";
+                return new ResponseVM { State = false, Title = "Error", Message = $"Error, Email {user.Email } is already registered." };
             }
         }
 
-
-        public async Task<string> RegisterWithRoleAsync(RegisterVM model, string role)
-        {
-            if (string.IsNullOrEmpty(role))
-                return "Error, Role is required";
-
-            var user = new AppUser
-            {
-                Id = Guid.NewGuid().ToString(),
-                UserName = model.UserName,
-                Email = model.Email,
-                PhoneNumber = model.PhoneNumber,
-                FirstName = model.FirstName,
-                LastName = model.LastName
-            };
-
-            var userWithSameEmail = await _userManager.FindByEmailAsync(model.Email);
-
-            if (userWithSameEmail == null)
-                userWithSameEmail = await _userManager.FindByNameAsync(model.Email);
-
-            if (userWithSameEmail == null)
-            {
-                var result = await _userManager.CreateAsync(user, model.Password);
-                if (result.Succeeded)
-                {
-                    await _userManager.AddToRoleAsync(user, role);
-
-                    return $"Success, User Registered with username {user.UserName}";
-                }
-                else
-                    return $"Error, Some error when register email {user.Email }.";
-            }
-            else
-            {
-                return $"Error, Email {user.Email } is already registered.";
-            }
-        }
-
-
-        public async Task<string> UpdateUserInfoAsync(RegisterVM model)
+        public async Task<ResponseVM> UpdateUserInfoAsync(RegisterVM model)
         {
             var user = await _userManager.FindByEmailAsync(model.Email);
 
@@ -137,22 +130,19 @@ namespace MyWebAPI.Services.Account
                 var result = await _userManager.UpdateAsync(user);
 
                 if (result.Succeeded)
-                    return $"Success, User {user.UserName} has been updated successfully.";
+                    return new ResponseVM { State = true, Title = "Success", Message = $"Success, User {user.UserName} has been updated successfully." };
 
                 else
-                    return $"Error, Some error when update User {user.Email }.";
+                    return new ResponseVM { State = false, Title = "Error", Message = $"Error, Some error when update User {user.Email }." };
             }
             else
             {
-                return $"Error, Some error when update User {user.Email }.";
+                return new ResponseVM { State = false, Title = "Error", Message = $"Error, Some error when update User {user.Email }." };
             }
         }
 
-
-        public async Task<string> UpdateUserRoleAsync(string email, string role)
+        public async Task<ResponseVM> UpdateUserRoleAsync(AppUser user, string role)
         {
-            var user = await _userManager.FindByEmailAsync(email);
-
             if (user != null)
             {
                 var result = await _userManager.RemoveFromRoleAsync(user, role);
@@ -161,50 +151,51 @@ namespace MyWebAPI.Services.Account
                     result = await _userManager.AddToRoleAsync(user, role);
 
                     if (result.Succeeded)
-                        return $"Success, User {user.Email} has been added to role {role}.";
+                        return new ResponseVM { State = true, Title = "Success", Message = $"Success, User {user.Email} has been added to role {role}." };
 
                     else
-                        return $"Error, Some error when add user {user.Email} to role {role}.";
+                        return new ResponseVM { State = false, Title = "Error", Message = $"Error, Some error when add user {user.Email} to role {role}." };
 
                 }
                 else
-                    return $"Error, Some error when remove user {user.Email} from role.";
+                    return new ResponseVM { State = false, Title = "Error", Message = $"Error, Some error when remove user {user.Email} from role." };
             }
             else
             {
-                return $"Error, Email {user.Email } not found.";
+                return new ResponseVM { State = false, Title = "Error", Message = $"Error, Email {user.Email } not found." };
             }
         }
 
-        public async Task<string> RemoveUserRoleAsync(string email, string role)
+        public async Task<ResponseVM> RemoveUserFromRoleAsync(string email, string role)
         {
             var user = await _userManager.FindByEmailAsync(email);
+            if(user == null)
+                await _userManager.FindByNameAsync(email);
 
             if (user != null)
             {
                 var result = await _userManager.RemoveFromRoleAsync(user, role);
 
                 if (result.Succeeded)
-                    return $"Success, User {user.Email} has been added to role {role}.";
+                    return new ResponseVM { State = true, Title = "Success", Message = $"Success, User {user.Email} has been added to role {role}." };
 
                 else
-                    return $"Error, Some error when remove user {user.Email} from role {role}.";
+                    return new ResponseVM { State = false, Title = "Error", Message = $"Error, Some error when remove user {user.Email} from role {role}." };
             }
             else
             {
-                return $"Error, Email {user.Email } not found.";
+                return new ResponseVM { State = false, Title = "Error", Message = $"Error, Email {user.Email } not found." };
             }
         }
-
 
         public async Task<AuthenticationVM> GetTokenAsync(TokenRequestVM model)
         {
             var authenticationModel = new AuthenticationVM();
 
-            var user = _context.Users.FirstOrDefault(x => x.UserName == model.UserName);
+            var user = await _userManager.FindByNameAsync(model.UserName);
 
             if (user == null)
-                user = await _userManager.FindByNameAsync(model.UserName);
+                user = await _userManager.FindByEmailAsync(model.UserName);
 
 
             if (user == null)
@@ -224,6 +215,7 @@ namespace MyWebAPI.Services.Account
                 authenticationModel.UserName = user.UserName;
                 authenticationModel.FirstName = user.FirstName;
                 authenticationModel.LastName = user.LastName;
+                authenticationModel.StopAt = user.StopAt;
                 var rolesList = await _userManager.GetRolesAsync(user).ConfigureAwait(false);
                 authenticationModel.Roles = rolesList.ToList();
 
@@ -303,23 +295,18 @@ namespace MyWebAPI.Services.Account
             return jwtSecurityToken;
         }
 
-        public async Task<string> AddRoleAsync(AddUserRoleVM model)
+        public async Task<ResponseVM> AddUserToRoleAsync(string email, string role)
         {
-            var user = await _userManager.FindByEmailAsync(model.Email);
+            var user = await _userManager.FindByEmailAsync(email);
             if (user == null)
+                await _userManager.FindByNameAsync(email);
+
+            if (!await _userManager.IsInRoleAsync(user, role))
             {
-                return $"Error, No Accounts Registered with {model.Email}.";
+                await _userManager.AddToRoleAsync(user, role);
+                return new ResponseVM { State = true, Title = "Success", Message = $"Success, Added {role} to user {user.Email}." };
             }
-            if (await _userManager.CheckPasswordAsync(user, model.Password))
-            {
-                if (!await _userManager.IsInRoleAsync(user, model.Role))
-                {
-                    await _userManager.AddToRoleAsync(user, model.Role);
-                    return $"Success, Added {model.Role} to user {model.Email}.";
-                }
-                return $"Error, Role {model.Role} not found.";
-            }
-            return $"Error, Incorrect Credentials for user {user.Email}.";
+            return new ResponseVM { State = false, Title = "Error", Message = $"Error, Role {role} not found." };
 
         }
 
@@ -364,6 +351,7 @@ namespace MyWebAPI.Services.Account
             authenticationModel.RefreshTokenExpiration = newRefreshToken.Expires;
             return authenticationModel;
         }
+
         public async Task<bool> RevokeToken(string token)
         {
             var user = _context.Users.SingleOrDefault(u => u.RefreshTokens.Any(t => t.Token == token));
@@ -384,23 +372,67 @@ namespace MyWebAPI.Services.Account
             return true;
         }
 
-        public async Task<AppUser> GetById(string id)
-        {
-            return await _context.Users.FindAsync(id);
-        }
-
         public async Task<bool> IsEmailAvailable(string email)
         {
             if (await _userManager.FindByEmailAsync(email) != null)
                 return false;
 
-            if (await _userManager.FindByNameAsync(email) != null)
+            return true;
+
+        }
+
+        public async Task<bool> IsUserNameAvailable(string userName)
+        {
+            if (await _userManager.FindByNameAsync(userName) != null)
                 return false;
 
             return true;
 
         }
+
+        public async Task<AppUser> GetById(string id)
+        {
+            return await _userManager.FindByIdAsync(id);
+        }
+
+        public async Task<AppUser> GetByName(string userName)
+        {
+            return await _userManager.FindByNameAsync(userName);
+        }
+
+        public async Task<AppUser> GetByEmail(string email)
+        {
+            return await _userManager.FindByEmailAsync(email);
+        }
+
+        public async Task<bool> AnyUser()
+        {
+            return await _context.Users.AnyAsync();
+        }
+
+        public async Task<bool> AnyRole()
+        {
+            return await _context.Roles.AnyAsync();
+        }
+
+        public async Task<bool> AnyUserRole()
+        {
+            return await _context.UserRoles.AnyAsync();
+        }
+
+        public async Task<bool> RenewSubscription(string userId, int days)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+                return false;
+
+            user.StopAt = user.StopAt.AddDays(days);
+            var result = await _userManager.UpdateAsync(user);
+
+            if (result.Succeeded)
+                return true;
+
+            return false;
+        }
     }
-
-
 }

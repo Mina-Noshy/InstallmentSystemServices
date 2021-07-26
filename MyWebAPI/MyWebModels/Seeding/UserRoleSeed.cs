@@ -12,7 +12,11 @@ namespace MyWebModels.Seeding
         public static void Seed(this ModelBuilder builder)
         {
             builder.Entity<IdentityUserRole<string>>().HasData(
-                new IdentityUserRole<string> { RoleId = "57784dee-54ff-4115-9835-da06239d6117", UserId = "6510262c-bbcb-4629-b1e7-20de05ef7ae6" }
+                    new IdentityUserRole<string> 
+                    {
+                        RoleId = "57784dee-54ff-4115-9835-da06239d6117", 
+                        UserId = "6510262c-bbcb-4629-b1e7-20de05ef7ae6" 
+                    }
                 );
         }
     }

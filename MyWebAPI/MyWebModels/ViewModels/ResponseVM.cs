@@ -7,7 +7,8 @@ namespace MyWebModels.ViewModels
 {
     public class ResponseVM
     {
-        public string Status { get; set; }
+        public bool State { get; set; }
+        public string Title { get; set; }
         public string Message { get; set; }
     }
 }

@@ -143,6 +143,13 @@ namespace MyWebAPI
                 app.UseSwagger();
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "MyWebAPI v1"));
             }
+            //removeelse block when publish.
+            else
+            {
+                app.UseSwagger();
+                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "MyWebAPI v1"));
+
+            }
 
             app.UseHttpsRedirection();
 

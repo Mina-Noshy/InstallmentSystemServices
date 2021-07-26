@@ -14,6 +14,7 @@ namespace MyWebModels.ViewModels
         public DateTime dueDate { get; set; }
         public DateTime? receivedDate { get; set; }
         public string billDescription { get; set; }
+        public double delayFine { get; set; }
 
         public InstallmentTypes delayFineType { get; set; }
 

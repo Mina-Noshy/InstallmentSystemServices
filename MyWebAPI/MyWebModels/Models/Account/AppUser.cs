@@ -19,6 +19,9 @@ namespace MyWebModels.Models.Account
         [RegularExpression(@"[a-zA-Z0-9\u0600-\u06FF ]+")]
         public string LastName { get; set; }
 
+        [DataType(DataType.Date)]
+        public DateTime StopAt { get; set; } = DateTime.UtcNow.AddDays(7);
+
         public string PictureURL { get; set; }
 
         public List<RefreshTokenVM> RefreshTokens { get; set; }

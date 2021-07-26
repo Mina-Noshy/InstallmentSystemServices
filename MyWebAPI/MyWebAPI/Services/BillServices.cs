@@ -33,7 +33,7 @@ namespace MyWebAPI.Services
 
         public async Task<ActionResult<bool>> Add(Bill bill)
         {
-            double _amountValue = bill.RestAmount / bill.InstallmentCount;
+            double _amountValue = bill.RestAmount / (double)bill.InstallmentCount;
 
             context.Add(bill);
             await context.SaveChangesAsync();
@@ -45,8 +45,8 @@ namespace MyWebAPI.Services
                     context.Add(new Installment
                     {
                         BillId = bill.Id,
-                        AmountValue = _amountValue,
-                        DueDate = DateTime.Now.Date.AddYears(i)
+                        AmountValue = (int)_amountValue,
+                        DueDate = bill.BillDate.AddYears(i)
                     });
                 }
                 else if (bill.InstallmentType == InstallmentTypes.شهرى)
@@ -54,8 +54,8 @@ namespace MyWebAPI.Services
                     context.Add(new Installment
                     {
                         BillId = bill.Id,
-                        AmountValue = _amountValue,
-                        DueDate = DateTime.Now.Date.AddMonths(i)
+                        AmountValue = (int)_amountValue,
+                        DueDate = bill.BillDate.AddMonths(i)
                     });
                 }
                 else
@@ -63,8 +63,8 @@ namespace MyWebAPI.Services
                     context.Add(new Installment
                     {
                         BillId = bill.Id,
-                        AmountValue = _amountValue,
-                        DueDate = DateTime.Now.Date.AddDays(i)
+                        AmountValue = (int)_amountValue,
+                        DueDate = bill.BillDate.AddDays(i)
                     });
                 }
 
@@ -110,6 +110,7 @@ namespace MyWebAPI.Services
                 .Select(x => new BillMobileVM
                 {
                     id = x.Id,
+                    clientId = x.ClientId,
                     client = x.GetClient.Name,
                     originalAmount = x.OriginalAmount,
                     amountPaid = x.AmountPaid,
@@ -128,6 +129,7 @@ namespace MyWebAPI.Services
                 .Select(x => new BillMobileVM
                 {
                     id = x.Id,
+                    clientId = x.ClientId,
                     client = x.GetClient.Name,
                     originalAmount = x.OriginalAmount,
                     amountPaid = x.AmountPaid,
