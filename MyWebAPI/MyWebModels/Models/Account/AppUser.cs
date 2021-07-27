@@ -20,7 +20,7 @@ namespace MyWebModels.Models.Account
         public string LastName { get; set; }
 
         [DataType(DataType.Date)]
-        public DateTime StopAt { get; set; } = DateTime.UtcNow.AddDays(7);
+        public DateTime StopAt { get; set; } = DateTime.UtcNow.AddDays(3);
 
         public string PictureURL { get; set; }
 

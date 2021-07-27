@@ -40,6 +40,8 @@ namespace MyWebAPI.Services.Account
         Task<bool> AnyUserRole();
 
         Task<bool> RenewSubscription(string userId, int days);
+
+        Task<DateTime> GetUserStoppedDate(string userId);
     }
     public class UserService : IUserService
     {
@@ -433,6 +435,15 @@ namespace MyWebAPI.Services.Account
                 return true;
 
             return false;
+        }
+
+        public async Task<DateTime> GetUserStoppedDate(string userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user != null)
+                return user.StopAt;
+
+            return default;
         }
     }
 }

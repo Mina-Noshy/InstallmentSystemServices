@@ -195,7 +195,7 @@ namespace MyWebAPI.Controllers
             return NotFound();
         }
 
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
         [HttpPost("{userId}/{days}")]
         public async Task<ActionResult> RenewSubscription(string userId, int days)
         {
@@ -205,6 +205,16 @@ namespace MyWebAPI.Controllers
             return NotFound();
         }
 
+        [HttpPost("{userId}")]
+        public async Task<ActionResult> GetUserStoppedDate(string userId)
+        {
+            DateTime _date = await _userService.GetUserStoppedDate(userId);
+
+            if (_date != default)
+                return Ok(_date);
+
+            return NotFound(_date);
+        }
 
         private void SetRefreshTokenInCookie(string refreshToken)
         {
