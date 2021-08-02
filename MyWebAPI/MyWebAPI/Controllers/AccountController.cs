@@ -85,7 +85,7 @@ namespace MyWebAPI.Controllers
 
         [Authorize]
         [HttpPost]
-        public async Task<ActionResult> UpdateUserInfoAsync(RegisterVM model)
+        public async Task<ActionResult> UpdateUserInfoAsync(UpdateUserInfoVM model)
         {
             var message = await _userService.UpdateUserInfoAsync(model);
 
@@ -95,7 +95,21 @@ namespace MyWebAPI.Controllers
                 return BadRequest(message);
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize]
+        [HttpPost]
+        public async Task<ActionResult> UpdateUserPasswordAsync(UpdateUserPasswordVM model)
+        {
+            var message = await _userService.UpdateUserPasswordAsync(model);
+
+            if (message.State)
+                return Ok(message);
+            else
+                return BadRequest(message);
+        }
+
+
+        //[Authorize(Roles = "Admin")]
+        [Authorize]
         [HttpPost("{userName}/{role}")]
         public async Task<ActionResult> UpdateUserRoleAsync(string userName, string role)
         {
@@ -108,7 +122,8 @@ namespace MyWebAPI.Controllers
                 return BadRequest(message);
         }
 
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
+        [Authorize]
         [HttpPost("{userName}/{role}")]
         public async Task<ActionResult> RemoveUserFromRoleAsync(string userName, string role)
         {
@@ -136,7 +151,8 @@ namespace MyWebAPI.Controllers
 
         }
 
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
+        [Authorize]
         [HttpPost("{userName}/{role}")]
         public async Task<IActionResult> AddUserToRoleAsync(string userName, string role)
         {
@@ -196,14 +212,29 @@ namespace MyWebAPI.Controllers
         }
 
         //[Authorize(Roles = "Admin")]
+        [Authorize]
         [HttpPost("{userId}/{days}")]
-        public async Task<ActionResult> RenewSubscription(string userId, int days)
+        public async Task<ActionResult> IncreaseSubscription(string userId, int days)
         {
-            if (await _userService.RenewSubscription(userId, days))
-                return Ok();
+            var response = await _userService.IncreaseSubscription(userId, days);
+            if (response.State)
+                return Ok(response);
 
-            return NotFound();
+            return NotFound(response);
         }
+
+        //[Authorize(Roles = "Admin")]
+        [Authorize]
+        [HttpPost("{userId}/{days}")]
+        public async Task<ActionResult> DecreaseSubscription(string userId, int days)
+        {
+            var response = await _userService.DecreaseSubscription(userId, days);
+            if (response.State)
+                return Ok(response);
+
+            return NotFound(response);
+        }
+
 
         [HttpPost("{userId}")]
         public async Task<ActionResult> GetUserStoppedDate(string userId)
@@ -216,6 +247,30 @@ namespace MyWebAPI.Controllers
             return NotFound(_date);
         }
 
+        //[Authorize(Roles = "Admin")]
+        [Authorize]
+        [HttpGet]
+        public async Task<List<AppUserMobileVM>> GetAllUsersVM()
+        {
+            return await _userService.GetAllUsersVM();
+        }
+
+        //[Authorize(Roles = "Admin")]
+        [Authorize]
+        [HttpGet("{userId}")]
+        public async Task<AuthenticationVM> GetUserDetailsVM(string userId)
+        {
+            return await _userService.GetUserDetailsVM(userId);
+        }
+
+        //[Authorize(Roles = "Admin")]
+        [Authorize]
+        [HttpGet]
+        public async Task<List<string>> GetAllRolesVM()
+        {
+            return await _userService.GetAllRolesVM();
+        }
+
         private void SetRefreshTokenInCookie(string refreshToken)
         {
             var cookieOptions = new CookieOptions
@@ -226,5 +281,6 @@ namespace MyWebAPI.Controllers
             Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
         }
     
+
     }
 }

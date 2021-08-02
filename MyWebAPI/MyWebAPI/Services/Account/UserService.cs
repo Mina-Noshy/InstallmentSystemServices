@@ -23,7 +23,8 @@ namespace MyWebAPI.Services.Account
         Task<bool> CreateRoleAsync(string role);
 
         Task<ResponseVM> RegisterAsync(RegisterVM model);
-        Task<ResponseVM> UpdateUserInfoAsync(RegisterVM model);
+        Task<ResponseVM> UpdateUserInfoAsync(UpdateUserInfoVM model);
+        Task<ResponseVM> UpdateUserPasswordAsync(UpdateUserPasswordVM model);
         Task<ResponseVM> UpdateUserRoleAsync(AppUser user, string role);
         Task<ResponseVM> RemoveUserFromRoleAsync(string email, string role);
         Task<AuthenticationVM> GetTokenAsync(TokenRequestVM model);
@@ -39,10 +40,16 @@ namespace MyWebAPI.Services.Account
         Task<bool> AnyRole();
         Task<bool> AnyUserRole();
 
-        Task<bool> RenewSubscription(string userId, int days);
+        Task<ResponseVM> IncreaseSubscription(string userId, int days);
+        Task<ResponseVM> DecreaseSubscription(string userId, int days);
 
         Task<DateTime> GetUserStoppedDate(string userId);
+
+        Task<List<AppUserMobileVM>> GetAllUsersVM();
+        Task<AuthenticationVM> GetUserDetailsVM(string userId);
+        Task<List<string>> GetAllRolesVM();
     }
+
     public class UserService : IUserService
     {
         private readonly AppDbContext _context;
@@ -116,9 +123,9 @@ namespace MyWebAPI.Services.Account
             }
         }
 
-        public async Task<ResponseVM> UpdateUserInfoAsync(RegisterVM model)
+        public async Task<ResponseVM> UpdateUserInfoAsync(UpdateUserInfoVM model)
         {
-            var user = await _userManager.FindByEmailAsync(model.Email);
+            var user = await _userManager.FindByIdAsync(model.UserId);
 
             if (user != null)
             {
@@ -215,6 +222,7 @@ namespace MyWebAPI.Services.Account
                 authenticationModel.Token = new JwtSecurityTokenHandler().WriteToken(jwtSecurityToken);
                 authenticationModel.Email = user.Email;
                 authenticationModel.UserName = user.UserName;
+                authenticationModel.PhoneNumber = user.PhoneNumber;
                 authenticationModel.FirstName = user.FirstName;
                 authenticationModel.LastName = user.LastName;
                 authenticationModel.StopAt = user.StopAt;
@@ -422,19 +430,42 @@ namespace MyWebAPI.Services.Account
             return await _context.UserRoles.AnyAsync();
         }
 
-        public async Task<bool> RenewSubscription(string userId, int days)
+        public async Task<ResponseVM> IncreaseSubscription(string userId, int days)
         {
             var user = await _userManager.FindByIdAsync(userId);
             if (user == null)
-                return false;
+                return new ResponseVM { State = false, Title = "Error", Message = "User not found!" };
 
             user.StopAt = user.StopAt.AddDays(days);
             var result = await _userManager.UpdateAsync(user);
 
             if (result.Succeeded)
-                return true;
+            {
+                var userAfter = await _userManager.FindByIdAsync(userId);
 
-            return false;
+                return new ResponseVM { State = true, Title = "Success", Message = userAfter.StopAt.Date.ToString() };
+            }
+
+            return new ResponseVM { State = false, Title = "Error", Message = "Something wrong!" };
+        }
+
+        public async Task<ResponseVM> DecreaseSubscription(string userId, int days)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+                return new ResponseVM { State = false, Title = "Error", Message = "User not found!" };
+
+            user.StopAt = user.StopAt.AddDays(days * -1);
+            var result = await _userManager.UpdateAsync(user);
+
+            if (result.Succeeded)
+            {
+                var userAfter = await _userManager.FindByIdAsync(userId);
+
+                return new ResponseVM { State = true, Title = "Success", Message = userAfter.StopAt.Date.ToString() };
+            }
+
+            return new ResponseVM { State = false, Title = "Error", Message = "Something wrong!" };
         }
 
         public async Task<DateTime> GetUserStoppedDate(string userId)
@@ -444,6 +475,75 @@ namespace MyWebAPI.Services.Account
                 return user.StopAt;
 
             return default;
+        }
+
+        public async Task<ResponseVM> UpdateUserPasswordAsync(UpdateUserPasswordVM model)
+        {
+            var user = await _userManager.FindByIdAsync(model.UserId);
+
+            if (user != null)
+            {
+                var result = await _userManager.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
+
+                if (result.Succeeded)
+                    return new ResponseVM { State = true, Title = "Success", Message = $"Success, {user.UserName} password has been updated successfully." };
+
+                else
+                    return new ResponseVM { State = false, Title = "Error", Message = $"Error, Some error when update user password for user {user.Email} ." };
+            }
+            else
+            {
+                return new ResponseVM { State = false, Title = "Error", Message = $"Error, Some error when update user password for user {user.Email }." };
+            }
+        }
+
+
+
+        public async Task<List<AppUserMobileVM>> GetAllUsersVM()
+        {
+            return await _userManager.Users.OrderBy(x => x.FirstName)
+                .Select(x => new AppUserMobileVM
+            {
+                UserId = x.Id,
+                UserName = x.UserName,
+                Email = x.Email,
+                FullName = x.FirstName + x.LastName
+            }).ToListAsync();
+        }
+
+        public async Task<AuthenticationVM> GetUserDetailsVM(string userId)
+        {
+            var authenticationModel = new AuthenticationVM();
+
+            var user = await _userManager.FindByIdAsync(userId);
+
+
+            if (user == null)
+            {
+                authenticationModel.IsAuthenticated = false;
+                authenticationModel.Message = $"Error, No accounts registered with id {userId}.";
+                return authenticationModel;
+            }
+
+
+            authenticationModel.UserId = user.Id;
+            authenticationModel.IsAuthenticated = true;
+            authenticationModel.Email = user.Email;
+            authenticationModel.UserName = user.UserName;
+            authenticationModel.PhoneNumber = user.PhoneNumber;
+            authenticationModel.FirstName = user.FirstName;
+            authenticationModel.LastName = user.LastName;
+            authenticationModel.StopAt = user.StopAt;
+            var rolesList = await _userManager.GetRolesAsync(user).ConfigureAwait(false);
+            authenticationModel.Roles = rolesList.ToList();
+
+            return authenticationModel;
+        }
+
+        public async Task<List<string>> GetAllRolesVM()
+        {
+            return await _roleManager.Roles.OrderBy(x => x.Name)
+                .Select(x => x.Name).ToListAsync();
         }
     }
 }
