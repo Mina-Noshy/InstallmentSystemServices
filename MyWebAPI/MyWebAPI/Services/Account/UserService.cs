@@ -507,7 +507,7 @@ namespace MyWebAPI.Services.Account
                 UserId = x.Id,
                 UserName = x.UserName,
                 Email = x.Email,
-                FullName = x.FirstName + x.LastName
+                FullName = x.FirstName + " " + x.LastName
             }).ToListAsync();
         }
 

@@ -22,3 +22,4 @@ D:\projects\web\InstallmentSystemServices\MyWebAPI\MyWebModels\obj\Release\netco
 D:\projects\web\InstallmentSystemServices\MyWebAPI\MyWebModels\obj\Release\netcoreapp3.1\MyWebModels.csproj.CoreCompileInputs.cache
 D:\projects\web\InstallmentSystemServices\MyWebAPI\MyWebModels\obj\Release\netcoreapp3.1\MyWebModels.dll
 D:\projects\web\InstallmentSystemServices\MyWebAPI\MyWebModels\obj\Release\netcoreapp3.1\MyWebModels.pdb
+D:\projects\web\InstallmentSystemServices\MyWebAPI\MyWebModels\obj\Release\netcoreapp3.1\MyWebModels.csproj.AssemblyReference.cache
